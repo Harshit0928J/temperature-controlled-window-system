@@ -1,53 +1,75 @@
 #include <DHT.h>
 #include <ESP32Servo.h>
 
-// Hardware connections
-#define DHT_PIN 15       // D15 = GPIO15
-#define DHT_TYPE DHT11
-#define SERVO_PIN 4      // D4 = GPIO4
+// DHT11 configuration
+#define DHTPIN 15
+#define DHTTYPE DHT11
 
-// Window control settings
-#define TEMP_THRESHOLD 25.0
-#define WINDOW_CLOSED_ANGLE 0
-#define WINDOW_OPEN_ANGLE 90
+// Servo configuration
+#define SERVOPIN 4
 
-DHT dht(DHT_PIN, DHT_TYPE);
+// Temperature threshold
+#define TEMP_LIMIT 25
+
+// Servo angles (exchanged)
+#define OPEN_ANGLE 0
+#define CLOSE_ANGLE 90
+
+DHT dht(DHTPIN, DHTTYPE);
 Servo windowServo;
 
 void setup() {
+
   Serial.begin(115200);
+
   dht.begin();
 
   windowServo.setPeriodHertz(50);
-  windowServo.attach(SERVO_PIN, 500, 2400);
-  windowServo.write(WINDOW_CLOSED_ANGLE);
+  windowServo.attach(SERVOPIN, 500, 2400);
 
-  Serial.println();
+  // Initially close the window
+  windowServo.write(CLOSE_ANGLE);
+
   Serial.println("Temperature Controlled Window System");
-  Serial.println("System Started");
+  Serial.println("-------------------------------------");
+
+  delay(2000);
 }
 
 void loop() {
+
   float temperature = dht.readTemperature();
 
+  // Check sensor reading
   if (isnan(temperature)) {
-    Serial.println("Sensor reading failed! Check DHT11 wiring.");
+
+    Serial.println("Sensor reading failed!");
+
     delay(2000);
     return;
   }
 
+  // Display temperature
   Serial.print("Temperature: ");
-  Serial.print(temperature, 1);
+  Serial.print(temperature);
   Serial.println(" C");
 
-  if (temperature >= TEMP_THRESHOLD) {
-    windowServo.write(WINDOW_OPEN_ANGLE);
-    Serial.println("Window: OPEN");
+  // Window control
+  if (temperature < TEMP_LIMIT) {
+
+    windowServo.write(CLOSE_ANGLE);
+
+    Serial.println("Window CLOSED");
+
   } else {
-    windowServo.write(WINDOW_CLOSED_ANGLE);
-    Serial.println("Window: CLOSED");
+
+    windowServo.write(OPEN_ANGLE);
+
+    Serial.println("Window OPEN");
+
   }
 
-  Serial.println("------------------------------");
+  Serial.println("-------------------------------------");
+
   delay(2000);
 }
